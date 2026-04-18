@@ -15,6 +15,7 @@ const handleInput = async (event:PointerEvent) => {
 </script>
 
 <template>
+    <h3>This is register</h3>
     <form>
         <label>
             <div>Email</div>

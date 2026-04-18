@@ -8,7 +8,7 @@ const { login } = useAuth();
 const emailVal = ref<string>("");
 const passVal = ref<string>("");
 
-const handleInput = (event:PointerEvent) => {
+const handleInput = (event: PointerEvent) => {
     event.preventDefault();
 
     login(emailVal.value, passVal.value);
@@ -16,6 +16,7 @@ const handleInput = (event:PointerEvent) => {
 </script>
 
 <template>
+    <h3>This is login</h3>
     <form>
         <label>
             <div>Email</div>
@@ -26,6 +27,8 @@ const handleInput = (event:PointerEvent) => {
             <input type="text" name="password" v-model="passVal">
         </label>
 
-        <button @click="handleInput">Login</button>
+        <div>
+            <button @click="handleInput">Login</button>
+        </div>
     </form>
 </template>
