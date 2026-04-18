@@ -5,12 +5,12 @@ import { useAuth } from '../../composables/useAuth';
 
 const { register } = useAuth();
 
-const emailVal = ref<string>("");
-const passVal = ref<string>("");
+const email = ref<string>("");
+const pass = ref<string>("");
 
 const handleInput = async (event:PointerEvent) => {
     event.preventDefault();
-    await register(emailVal.value, passVal.value);
+    await register(email.value, pass.value);
 }
 </script>
 
@@ -19,11 +19,11 @@ const handleInput = async (event:PointerEvent) => {
     <form>
         <label>
             <div>Email</div>
-            <input type="text" name="email" v-model="emailVal">
+            <input type="text" name="email" v-model="email">
         </label>
         <label>
             <div>Password</div>
-            <input type="text" name="password" v-model="passVal">
+            <input type="text" name="password" v-model="pass">
         </label>
 
         <div>

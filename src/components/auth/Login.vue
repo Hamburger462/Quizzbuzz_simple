@@ -5,13 +5,13 @@ import { useAuth } from '../../composables/useAuth';
 
 const { login } = useAuth();
 
-const emailVal = ref<string>("");
-const passVal = ref<string>("");
+const email = ref<string>("");
+const pass = ref<string>("");
 
 const handleInput = (event: PointerEvent) => {
     event.preventDefault();
 
-    login(emailVal.value, passVal.value);
+    login(email.value, pass.value);
 }
 </script>
 
@@ -20,11 +20,11 @@ const handleInput = (event: PointerEvent) => {
     <form>
         <label>
             <div>Email</div>
-            <input type="text" name="email" v-model="emailVal">
+            <input type="text" name="email" v-model="email">
         </label>
         <label>
             <div>Password</div>
-            <input type="text" name="password" v-model="passVal">
+            <input type="text" name="password" v-model="pass">
         </label>
 
         <div>
