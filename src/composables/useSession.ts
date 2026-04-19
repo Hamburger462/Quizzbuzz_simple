@@ -1,49 +1,67 @@
 // composables/useSession.ts
 
-import { ref } from "vue"
-import { db } from "../firebase"
-import {
-  doc,
-  setDoc,
-  onSnapshot,
-  type Unsubscribe
-} from "firebase/firestore"
-import type { Session } from "../types"
+import { ref, onUnmounted } from "vue";
+import { doc, setDoc, onSnapshot } from "firebase/firestore";
+
+import { db } from "../firebase";
+import type { Session } from "../types";
 
 function generateCode(): string {
-  return Math.random().toString(36).substring(2, 8).toUpperCase()
+    return Math.random().toString(36).substring(2, 8).toUpperCase();
 }
 
 export function useSession() {
-  const session = ref<Session | null>(null)
+    const createSession = async (
+        quizId: string,
+        hostUid: string,
+    ): Promise<string> => {
+        const code = generateCode();
 
-  const createSession = async (
-    quizId: string,
-    hostUid: string
-  ): Promise<string> => {
+        await setDoc(doc(db, "sessions", code), {
+            code,
+            quizId,
+            hostUid,
+            status: "waiting",
+            createdAt: Date.now(),
+        });
 
-    const code = generateCode()
+        return code;
+    };
 
-    await setDoc(doc(db, "sessions", code), {
-      code,
-      quizId,
-      hostUid,
-      status: "waiting",
-      createdAt: Date.now()
-    })
+    const useSessionByCode = (code: string) => {
+        const session = ref<Session | null>(null);
+        const loading = ref(true);
+        const error = ref<Error | null>(null);
 
-    return code
-  }
+        const unsubscribe = onSnapshot(
+            doc(db, "sessions", code),
+            (snap) => {
+                if (snap.exists()) {
+                    session.value = snap.data() as Session;
+                } else {
+                    session.value = null;
+                }
+                loading.value = false;
+            },
+            (err) => {
+                error.value = err;
+                loading.value = false;
+            },
+        );
 
-  const subscribeSession = (code: string): Unsubscribe => {
-    return onSnapshot(doc(db, "sessions", code), (snap) => {
-      session.value = snap.data() as Session
-    })
-  }
+        onUnmounted(() => {
+            unsubscribe();
+        });
 
-  return {
-    session,
-    createSession,
-    subscribeSession
-  }
+        return {
+            session,
+            loading,
+            error,
+        };
+    };
+
+    return {
+        createSession,
+        useSessionByCode,
+    };
 }

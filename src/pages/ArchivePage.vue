@@ -26,8 +26,12 @@ const handleCreate = async (event: PointerEvent) => {
 
     if (!user.value) return;
 
-    const quiz_id = await createQuiz(title.value, user.value.uid);
-    // router.push(`/game/${quiz_id}`);
+    const quizId = await createQuiz(title.value, user.value.uid);
+    goToGamePage(quizId);
+}
+
+const goToGamePage = (quizId: string): void => {
+    router.push(`/game/${quizId}`);
 }
 </script>
 
@@ -46,6 +50,6 @@ const handleCreate = async (event: PointerEvent) => {
     </form>
 
     <div v-for="quiz in quizzes">
-        <span>{{ quiz.title }}</span>
+        <div @click="() => goToGamePage(quiz.id)">{{ quiz.title }}</div>
     </div>
 </template>

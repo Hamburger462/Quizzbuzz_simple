@@ -1,14 +1,18 @@
-// composables/useQuiz.ts
-
-import { db } from "../firebase";
+import { ref, onUnmounted } from "vue";
 import {
     collection,
+    doc,
     addDoc,
+    setDoc,
+    getDoc,
+    deleteDoc,
     type DocumentReference,
     query,
     where,
-    onSnapshot
+    onSnapshot,
 } from "firebase/firestore";
+
+import { db } from "../firebase";
 import type { Question } from "../types";
 
 export function useQuiz() {
@@ -25,25 +29,72 @@ export function useQuiz() {
         return docRef.id;
     };
 
+    const updateQuiz = async (quizId: string, updates: any): Promise<void> => {
+        await setDoc(doc(db, "quizzes", quizId), updates, { merge: true });
+    };
+
+    const readQuiz = async (quizId: string) => {
+        const docRef = await getDoc(doc(db, "quizzes", quizId));
+
+        return docRef.data;
+    };
+
+    const deleteQuiz = async (quizId: string) => {
+        await deleteDoc(doc(db, "quizzes", quizId));
+    };
+
+    const useQuizById = (quizId: string) => {
+        const quiz = ref<any | null>(null);
+        const loading = ref(true);
+        const error = ref<Error | null>(null);
+
+        const unsubscribe = onSnapshot(
+            doc(db, "quizzes", quizId),
+            (snapshot) => {
+                if (snapshot.exists()) {
+                    quiz.value = { id: snapshot.id, ...snapshot.data() };
+                } else {
+                    quiz.value = null;
+                }
+                loading.value = false;
+            },
+            (err) => {
+                error.value = err;
+                loading.value = false;
+            },
+        );
+
+        onUnmounted(() => {
+            unsubscribe();
+        });
+
+        return {
+            quiz,
+            loading,
+            error,
+        };
+    };
+
     return {
         createQuiz,
+        updateQuiz,
+        readQuiz,
+        deleteQuiz,
+        useQuizById,
     };
 }
 
 export function subscribeToUserQuizzes(userId: string, callback: Function) {
-  const q = query(
-    collection(db, "quizzes"),
-    where("ownerId", "==", userId)
-  );
+    const q = query(collection(db, "quizzes"), where("ownerId", "==", userId));
 
-  return onSnapshot(q, (snapshot) => {
-    const quizzes = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
+    return onSnapshot(q, (snapshot) => {
+        const quizzes = snapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+        }));
 
-    callback(quizzes);
-  });
+        callback(quizzes);
+    });
 }
 
 export function useQuestion() {
