@@ -6,14 +6,22 @@ import {
     setDoc,
     getDoc,
     deleteDoc,
-    type DocumentReference,
     query,
     where,
     onSnapshot,
 } from "firebase/firestore";
 
 import { db } from "../firebase";
-import type { Question } from "../types";
+
+export function encodeChoice(choice: string, seed: string) {
+  return btoa(`${seed}:${choice}`)
+}
+
+export function decodeChoice(encoded: string) {
+  const decoded = atob(encoded)
+  const [, choice] = decoded.split(":")
+  return choice
+}
 
 export function useQuiz() {
     const createQuiz = async (
@@ -95,24 +103,4 @@ export function subscribeToUserQuizzes(userId: string, callback: Function) {
 
         callback(quizzes);
     });
-}
-
-export function useQuestion() {
-    const addQuestion = async (
-        quizId: string,
-        question: Question,
-    ): Promise<DocumentReference> => {
-        const questionsRef = collection(db, "quizzes", quizId, "questions");
-
-        return addDoc(questionsRef, {
-            text: question.text,
-            choices: question.choices,
-            correctAnswer: question.correctAnswer,
-            timeLimit: question.timeLimit ?? 20,
-        });
-    };
-
-    return {
-        addQuestion,
-    };
 }
