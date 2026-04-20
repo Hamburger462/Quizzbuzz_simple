@@ -1,5 +1,3 @@
-// composables/useAuth.ts
-
 import { ref } from "vue"
 import {
   signInAnonymously,

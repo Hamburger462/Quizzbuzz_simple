@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
-import { useQuiz, encodeChoice } from '../composables/useQuiz';
+import { useQuiz, encodeChoice, decodeChoice } from '../composables/useQuiz';
 import { useAuth } from '../composables/useAuth';
 import { useSession } from '../composables/useSession';
 
@@ -18,6 +18,10 @@ const router = useRouter();
 const quizId = route.params.id as string;
 const { quiz } = useQuizById(quizId);
 const questions = ref<Array<Question>>([]);
+
+watch(quiz, () => {
+    questions.value = quiz.value.questions
+})
 
 const handleDelete = () => {
     deleteQuiz(quizId);
@@ -59,6 +63,15 @@ const handleCorrectChoice = (id: string, choiceId: number) => {
 
     question.correctChoice = encodeChoice(question?.choices[choiceId], quizId);
 }
+
+const handleCheckChoice = (id: string, choiceId: number): boolean => {
+    const question = questions.value.find((value) => id == value.id);
+    if (!question) return false;
+    if (!question.correctChoice) return false;
+
+    const choiceText = decodeChoice(question.correctChoice);
+    return choiceText == question.choices[choiceId];
+}
 </script>
 
 <template>
@@ -74,7 +87,7 @@ const handleCorrectChoice = (id: string, choiceId: number) => {
 
                 <div>
                     <label v-for="(choice, cIndex) in question.choices" :key="cIndex">
-                        <input type="radio" :name="`question-${qIndex}`" :value="cIndex"
+                        <input type="radio" :name="`question-${qIndex}`" :value="cIndex" :checked="handleCheckChoice(question.id as string, cIndex) == true"
                             @change="() => handleCorrectChoice(question.id as string, cIndex)" />
                         <span>{{ choice }}</span>
                     </label>

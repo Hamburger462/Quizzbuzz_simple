@@ -8,8 +8,9 @@ export interface User {
 export interface Quiz {
   id?: string
   title: string
-  createdBy: string
+  ownerId: string
   createdAt: number
+  questions: Question[]
 }
 
 export interface Question {

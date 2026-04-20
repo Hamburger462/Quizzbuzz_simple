@@ -13,6 +13,8 @@ import {
 
 import { db } from "../firebase";
 
+import type { Quiz } from "../types";
+
 export function encodeChoice(choice: string, seed: string) {
   return btoa(`${seed}:${choice}`)
 }
@@ -32,6 +34,7 @@ export function useQuiz() {
             title,
             ownerId: userId,
             createdAt: Date.now(),
+            questions: [],
         });
 
         return docRef.id;
@@ -41,10 +44,21 @@ export function useQuiz() {
         await setDoc(doc(db, "quizzes", quizId), updates, { merge: true });
     };
 
-    const readQuiz = async (quizId: string) => {
+    const readQuiz = async (quizId: string): Promise<Quiz | null> => {
         const docRef = await getDoc(doc(db, "quizzes", quizId));
 
-        return docRef.data;
+        const docData = docRef.data();
+
+        if(!docData) return null;
+
+        const quiz: Quiz = {
+            title: docData.title,
+            ownerId: docData.ownerId,
+            createdAt: docData.createdAt,
+            questions: docData.questions
+        }
+
+        return quiz;
     };
 
     const deleteQuiz = async (quizId: string) => {

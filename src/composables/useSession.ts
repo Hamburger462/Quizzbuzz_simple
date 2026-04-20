@@ -1,5 +1,3 @@
-// composables/useSession.ts
-
 import { ref, onUnmounted } from "vue";
 import { doc, setDoc, onSnapshot } from "firebase/firestore";
 
@@ -26,6 +24,29 @@ export function useSession() {
         });
 
         return code;
+    };
+
+    const changeSessionStatus = async (code: string, status: string) => {
+        switch (status) {
+            case "active":
+                await setDoc(
+                    doc(db, "sessions", code),
+                    {
+                        status: "active",
+                    },
+                    { merge: true },
+                );
+                break;
+            case "finished":
+                await setDoc(
+                    doc(db, "sessions", code),
+                    {
+                        status: "finished",
+                    },
+                    { merge: true },
+                );
+                break;
+        }
     };
 
     const useSessionByCode = (code: string) => {
@@ -63,5 +84,17 @@ export function useSession() {
     return {
         createSession,
         useSessionByCode,
+        changeSessionStatus,
     };
+}
+
+export function shuffleQuestions<T>(questions: T[]): T[] {
+  const arr = [...questions]; // clone
+
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+
+  return arr;
 }

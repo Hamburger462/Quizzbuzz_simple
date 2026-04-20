@@ -1,52 +1,64 @@
-// composables/usePlayer.ts
-
-import { ref } from "vue"
-import { db } from "../firebase"
+import { ref, onUnmounted } from "vue";
+import { db } from "../firebase";
 import {
-  collection,
-  addDoc,
-  onSnapshot,
-  type Unsubscribe
-} from "firebase/firestore"
-import type { Player } from "../types"
+    collection,
+    setDoc,
+    doc,
+    onSnapshot,
+} from "firebase/firestore";
+import type { Player } from "../types";
 
-export function usePlayer() {
-  const players = ref<Player[]>([])
+import { useAuth } from "./useAuth";
 
-  const joinSession = async (
-    sessionCode: string,
-    nickname: string,
-    uid: string | null
-  ) => {
+export function usePlayers() {
+    const addPlayer = async (sessionCode: string, nickname: string) => {
+        const { user } = useAuth();
+        if (!user.value) return;
 
-    return addDoc(
-      collection(db, "sessions", sessionCode, "players"),
-      {
-        uid,
-        nickname,
-        score: 0,
-        finished: false,
-        joinedAt: Date.now()
-      }
-    )
-  }
+        await setDoc(
+            doc(db, "sessions", sessionCode, "players", user.value.uid),
+            {
+                nickname: nickname,
+                score: 0,
+                finished: false,
+                joinedAt: Date.now(),
+            },
+        );
+    };
 
-  const subscribePlayers = (sessionCode: string): Unsubscribe => {
+    const usePlayersBySession = (sessionCode: string) => {
+        const players = ref<Player[]>([]);
+        const loading = ref(true);
+        const error = ref<Error | null>(null);
 
-    return onSnapshot(
-      collection(db, "sessions", sessionCode, "players"),
-      (snapshot) => {
-        players.value = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...(doc.data() as Omit<Player, "id">)
-        }))
-      }
-    )
-  }
+        const unsubscribe = onSnapshot(
+            collection(db, "sessions", sessionCode, "players"),
+            (snapshot) => {
+                players.value = snapshot.docs.map((doc) => ({
+                    id: doc.id,
+                    ...(doc.data() as Omit<Player, "id">),
+                }));
+                loading.value = false;
+            },
+            (err) => {
+                error.value = err;
+                loading.value = false;
+            },
+        );
 
-  return {
-    players,
-    joinSession,
-    subscribePlayers
-  }
+        onUnmounted(() => {
+            unsubscribe();
+        });
+
+        return {
+            players,
+            loading,
+            error,
+        };
+    };
+
+    return {
+        usePlayersBySession,
+        addPlayer,
+    };
 }
