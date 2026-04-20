@@ -14,7 +14,7 @@ export interface Quiz {
 }
 
 export interface Question {
-  id?: string
+  id: string
   text: string
   choices: string[]
   correctChoice: string | null
