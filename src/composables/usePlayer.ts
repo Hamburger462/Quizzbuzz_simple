@@ -1,9 +1,54 @@
 import { ref, onUnmounted } from "vue";
 import { db } from "../firebase";
 import { collection, setDoc, doc, onSnapshot } from "firebase/firestore";
-import type { Player } from "../types";
+import type { Player, Answer } from "../types";
 
 import { useAuth } from "./useAuth";
+
+export const useQuizTimer = (payload: {
+    qDuration: number;
+}) => {
+    const remainingSeconds = ref(0);
+    const remainingTime = ref(0);
+    const isExpired = ref(false);
+
+    let interval: number;
+
+    const stopTimer = () => {
+        clearInterval(interval);
+    };
+
+    const update = (startedAt: number) => {
+        const endAt = startedAt + payload.qDuration;
+        const now = Date.now();
+        const remainingMs = endAt - now;
+
+        remainingTime.value = remainingMs;
+        remainingSeconds.value = Math.max(0, Math.ceil(remainingMs / 1000));
+
+        if (remainingMs <= 0) {
+            isExpired.value = true;
+            stopTimer();
+        }
+    };
+
+    const startTimer = (startedAt: number) => {
+        stopTimer(); // clear any previous interval before starting a new one
+        isExpired.value = false;
+        update(startedAt); // run immediately so the display is correct right away
+        interval = setInterval(() => update(startedAt), 200);
+    };
+
+    onUnmounted(() => clearInterval(interval));
+
+    return {
+        remainingSeconds,
+        remainingTime,
+        isExpired,
+        startTimer,
+        stopTimer,
+    };
+};
 
 export function usePlayers() {
     const addPlayer = async (sessionCode: string, nickname: string) => {
@@ -14,7 +59,7 @@ export function usePlayers() {
             doc(db, "sessions", sessionCode, "players", user.value.uid),
             {
                 nickname: nickname,
-                score: 0,
+                score: 10000,
                 finished: false,
                 joinedAt: Date.now(),
             },
@@ -24,12 +69,12 @@ export function usePlayers() {
     const addPlayerAnswer = async (
         sessionCode: string,
         userId: string,
-        answers: Record<string, string>,
+        questions: Record<string, Answer>,
     ): Promise<void> => {
         await setDoc(
             doc(db, "sessions", sessionCode, "players", userId),
             {
-                answers,
+                questions,
             },
             { merge: true },
         );
@@ -135,6 +180,6 @@ export function usePlayers() {
         addPlayerScore,
         changePlayerStatus,
         usePlayersBySession,
-        usePlayerById
+        usePlayerById,
     };
 }

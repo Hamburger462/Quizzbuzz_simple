@@ -30,7 +30,7 @@ export interface Session {
 }
 
 export interface Player {
-  id?: string
+  id: string
   uid: string | null
   nickname: string
   score: number
@@ -40,9 +40,8 @@ export interface Player {
 
 export interface Answer {
   id?: string
-  playerId: string
-  questionId: string
   selected: string
-  isCorrect: boolean
-  createdAt: number
+  isCorrect?: boolean
+  startedAt?: number
+  answeredAt?: number
 }
