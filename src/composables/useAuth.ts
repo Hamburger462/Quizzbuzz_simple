@@ -7,7 +7,7 @@ import {
   signOut,
   type User as FirebaseUser
 } from "firebase/auth"
-import { doc, setDoc, getDoc, onSnapshot } from "firebase/firestore"
+import { doc, setDoc, onSnapshot } from "firebase/firestore"
 import { auth, db } from "../firebase"
 import type { User } from "../types"
 

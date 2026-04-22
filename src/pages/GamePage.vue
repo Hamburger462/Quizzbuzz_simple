@@ -17,11 +17,18 @@ const router = useRouter();
 
 const quizId = route.params.id as string;
 const { quiz } = useQuizById(quizId);
-const questions = ref<Array<Question>>([]);
+const questions       = ref<Array<Question>>([]);
+const globalAvailable = ref<boolean>(false);
 
 watch(quiz, () => {
-    questions.value = quiz.value.questions;
+    questions.value       = quiz.value.questions;
+    globalAvailable.value = quiz.value.globalAvailable ?? false;
 });
+
+const handleToggleGlobal = async () => {
+    globalAvailable.value = !globalAvailable.value;
+    await updateQuiz(quizId, { globalAvailable: globalAvailable.value });
+};
 
 // ── Actions ──────────────────────────────────────────────────────────────────
 const saving    = ref(false);
@@ -95,6 +102,12 @@ const CHOICE_LETTERS = ['A', 'B', 'C', 'D'];
                     <span class="q-count">{{ questions.length }} question{{ questions.length !== 1 ? 's' : '' }}</span>
                 </div>
                 <div class="toolbar-right">
+                    <label class="global-toggle" :class="{ 'global-toggle--on': globalAvailable }" @click.prevent="handleToggleGlobal">
+                        <span class="global-toggle-track">
+                            <span class="global-toggle-thumb"></span>
+                        </span>
+                        <span class="global-toggle-label">{{ globalAvailable ? 'Public' : 'Private' }}</span>
+                    </label>
                     <button
                         class="btn-ghost"
                         :disabled="saving"
@@ -698,10 +711,56 @@ const CHOICE_LETTERS = ['A', 'B', 'C', 'D'];
     flex-wrap: wrap;
 }
 
-.confirm-label {
+/* ── Global availability toggle ── */
+.global-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    user-select: none;
+    padding: 0.3rem 0.5rem;
+    border-radius: 6px;
+    transition: background 0.15s;
+}
+.global-toggle:hover { background: var(--surface, #F2F0EB); }
+
+.global-toggle-track {
+    position: relative;
+    width: 32px;
+    height: 18px;
+    border-radius: 9px;
+    background: var(--border, #EDEBE5);
+    flex-shrink: 0;
+    transition: background 0.2s;
+}
+.global-toggle--on .global-toggle-track {
+    background: var(--accent, #E8471A);
+}
+
+.global-toggle-thumb {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+    transition: transform 0.2s;
+}
+.global-toggle--on .global-toggle-thumb {
+    transform: translateX(14px);
+}
+
+.global-toggle-label {
     font-family: 'Manrope', sans-serif;
     font-size: 0.8125rem;
     font-weight: 600;
     color: var(--muted, #6B6760);
+    min-width: 42px;
+    transition: color 0.15s;
+}
+.global-toggle--on .global-toggle-label {
+    color: var(--accent, #E8471A);
 }
 </style>

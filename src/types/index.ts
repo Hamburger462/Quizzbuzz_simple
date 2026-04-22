@@ -14,6 +14,7 @@ export interface Quiz {
   ownerId: string
   createdAt: number
   questions: Question[]
+  globalAvailable?: boolean
 }
 
 export interface Question {
