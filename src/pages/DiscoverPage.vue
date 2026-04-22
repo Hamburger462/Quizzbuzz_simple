@@ -1,40 +1,13 @@
 <script setup lang="ts">
-import { ref, onUnmounted, computed } from 'vue';
+import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
-import { db } from '../firebase';
-import type { Quiz } from '../types';
+import { usePublicQuizzes } from '../composables/useQuiz';
 
 const router = useRouter();
 
 // ── Data ──────────────────────────────────────────────────────────────────────
-type PublicQuiz = Quiz & { id: string; globalAvailable: boolean };
-
-const quizzes = ref<PublicQuiz[]>([]);
-const loading = ref(true);
-const error   = ref('');
-
-const unsubscribe = onSnapshot(
-    query(
-        collection(db, 'quizzes'),
-        where('globalAvailable', '==', true),
-        orderBy('createdAt', 'desc')
-    ),
-    (snapshot) => {
-        quizzes.value = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...(doc.data() as Omit<PublicQuiz, 'id'>),
-        }));
-        loading.value = false;
-    },
-    (err) => {
-        console.error(err);
-        error.value = 'Failed to load quizzes.';
-        loading.value = false;
-    }
-);
-
-onUnmounted(() => unsubscribe());
+// All Firestore logic is now encapsulated in this composable
+const { quizzes, loading, error } = usePublicQuizzes();
 
 // ── Search / filter ───────────────────────────────────────────────────────────
 const search = ref('');
@@ -48,8 +21,8 @@ const filtered = computed(() => {
 });
 
 // ── Actions ───────────────────────────────────────────────────────────────────
-const handlePlay = (quizId: string) => {
-    // Host a session directly from discover — reuse GamePage's launch flow
+const handlePlay = (quizId?: string) => {
+    if (!quizId) return;
     router.push(`/game/${quizId}`);
 };
 </script>
@@ -58,7 +31,6 @@ const handlePlay = (quizId: string) => {
     <div class="discover-page">
         <div class="container">
 
-            <!-- Page header -->
             <div class="page-header">
                 <div>
                     <p class="eyebrow">Community</p>
@@ -67,7 +39,6 @@ const handlePlay = (quizId: string) => {
                 <p class="page-sub">Browse quizzes shared by the community and launch a session in one click.</p>
             </div>
 
-            <!-- Search -->
             <div class="search-row">
                 <div class="search-wrap">
                     <span class="search-icon">⌕</span>
@@ -88,17 +59,14 @@ const handlePlay = (quizId: string) => {
                 </span>
             </div>
 
-            <!-- Loading -->
             <div v-if="loading" class="state-block">
                 <span class="spinner"></span>
             </div>
 
-            <!-- Error -->
             <div v-else-if="error" class="state-block">
                 <div class="error-banner">{{ error }}</div>
             </div>
 
-            <!-- Empty (no public quizzes at all) -->
             <div v-else-if="quizzes.length === 0" class="empty-state">
                 <div class="empty-icon">🔍</div>
                 <h3>Nothing here yet</h3>
@@ -106,7 +74,6 @@ const handlePlay = (quizId: string) => {
                 <RouterLink to="/archive" class="btn-primary">Go to Archive</RouterLink>
             </div>
 
-            <!-- Empty search -->
             <div v-else-if="filtered.length === 0" class="empty-state">
                 <div class="empty-icon">🤷</div>
                 <h3>No matches</h3>
@@ -114,7 +81,6 @@ const handlePlay = (quizId: string) => {
                 <button class="btn-ghost" @click="search = ''">Clear search</button>
             </div>
 
-            <!-- Grid -->
             <div v-else class="quiz-grid">
                 <div
                     v-for="(quiz, i) in filtered"
@@ -136,7 +102,7 @@ const handlePlay = (quizId: string) => {
                             {{ quiz.questions?.length ?? 0 }} question{{ (quiz.questions?.length ?? 0) !== 1 ? 's' : '' }}
                         </p>
 
-                        <button class="btn-play" @click="handlePlay(quiz.id as string)">
+                        <button class="btn-play" @click="handlePlay(quiz.id)">
                             ▶ Play
                         </button>
                     </div>

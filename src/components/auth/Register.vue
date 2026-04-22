@@ -7,6 +7,7 @@ const { register } = useAuth();
 const router = useRouter();
 
 const email   = ref<string>("");
+const username = ref<string>("");
 const pass    = ref<string>("");
 const confirm = ref<string>("");
 const error   = ref<string>("");
@@ -16,7 +17,7 @@ const handleInput = async (event: PointerEvent) => {
     event.preventDefault();
     error.value = "";
 
-    if (!email.value || !pass.value) return;
+    if (!email.value || !pass.value || !username.value) return;
 
     if (pass.value !== confirm.value) {
         error.value = "Passwords don't match.";
@@ -30,7 +31,9 @@ const handleInput = async (event: PointerEvent) => {
 
     loading.value = true;
     try {
-        await register(email.value, pass.value);
+        console.log("Registering")
+        await register(email.value, pass.value, username.value);
+        console.log("Redirecting")
         router.push("/archive");
     } catch (e: any) {
         error.value = "Couldn't create account. That email may already be in use.";
@@ -50,6 +53,18 @@ const handleInput = async (event: PointerEvent) => {
         <div v-if="error" class="error-banner">{{ error }}</div>
 
         <form class="auth-form" @submit.prevent>
+            <div class="field">
+                <label class="field-label" for="reg-name">Username</label>
+                <input
+                    id="reg-name"
+                    class="text-input"
+                    type="text"
+                    name="name"
+                    placeholder="username"
+                    v-model="username"
+                />
+            </div>
+
             <div class="field">
                 <label class="field-label" for="reg-email">Email</label>
                 <input

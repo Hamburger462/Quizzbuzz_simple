@@ -25,21 +25,23 @@ export function useAuth() {
     return signInWithEmailAndPassword(auth, email, password)
   }
 
-  const register = async (email: string, password: string) => {
+  const register = async (email: string, password: string, username: string) => {
     const credential = await createUserWithEmailAndPassword(auth, email, password)
     const { uid } = credential.user
 
     // Derive a default username from the email local-part
-    const username = email.split("@")[0]
-
     const userDoc: User = {
-      uid,
       email,
       username,
       isAnonymous: false,
     }
 
-    await setDoc(doc(db, "users", uid), userDoc)
+    try{
+      await setDoc(doc(db, "users", uid), userDoc);
+    }
+    catch(err){
+      console.error(err);
+    }
 
     return credential
   }

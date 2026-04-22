@@ -1,7 +1,6 @@
 // src/types/index.ts
 
 export interface User {
-  uid: string
   email: string
   username: string
   profile_img_url?: string

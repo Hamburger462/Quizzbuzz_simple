@@ -102,6 +102,7 @@ const CHOICE_LETTERS = ['A', 'B', 'C', 'D'];
                     <span class="q-count">{{ questions.length }} question{{ questions.length !== 1 ? 's' : '' }}</span>
                 </div>
                 <div class="toolbar-right">
+                    <template v-if="user.uid == quiz.ownerId">
                     <label class="global-toggle" :class="{ 'global-toggle--on': globalAvailable }" @click.prevent="handleToggleGlobal">
                         <span class="global-toggle-track">
                             <span class="global-toggle-thumb"></span>
@@ -116,6 +117,7 @@ const CHOICE_LETTERS = ['A', 'B', 'C', 'D'];
                         <span v-if="!saving">Save</span>
                         <span v-else class="spinner spinner--dark"></span>
                     </button>
+                    </template>
                     <button
                         class="btn-primary"
                         :disabled="launching || questions.length === 0"
