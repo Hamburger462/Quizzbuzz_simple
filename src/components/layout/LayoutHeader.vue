@@ -20,8 +20,8 @@ const { user } = useAuth();
                     <RouterLink :to="`/profile/${user.uid}`" class="nav-link">Profile</RouterLink>
                 </template>
                 <template v-else>
-                    <RouterLink to="/auth/register" class="nav-link">Register</RouterLink>
                     <RouterLink to="/auth/login" class="nav-link">Login</RouterLink>
+                    <RouterLink to="/auth/register" class="nav-link">Register</RouterLink>
                 </template>
 
                 <RouterLink to="/session" class="nav-cta">Play now</RouterLink>
