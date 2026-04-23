@@ -14,6 +14,7 @@ export interface Quiz {
   createdAt: number
   questions: Question[]
   globalAvailable?: boolean
+  cover_image_url?: string | null
 }
 
 export interface Question {
@@ -22,6 +23,7 @@ export interface Question {
   choices: string[]
   correctChoice: string | null
   timeLimit: number
+  image_url?: string
 }
 
 export interface Session {

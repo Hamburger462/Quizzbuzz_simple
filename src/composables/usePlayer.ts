@@ -1,6 +1,6 @@
 import { ref, onUnmounted } from "vue";
 import { db } from "../firebase";
-import { collection, setDoc, doc, onSnapshot } from "firebase/firestore";
+import { collection, setDoc, getDoc, doc, onSnapshot } from "firebase/firestore";
 import type { Player, Answer } from "../types";
 
 import { useAuth } from "./useAuth";
@@ -36,7 +36,7 @@ export const useQuizTimer = (payload: {
         stopTimer(); // clear any previous interval before starting a new one
         isExpired.value = false;
         update(startedAt); // run immediately so the display is correct right away
-        interval = setInterval(() => update(startedAt), 200);
+        interval = setInterval(() => update(startedAt), 100);
     };
 
     onUnmounted(() => clearInterval(interval));
@@ -174,6 +174,12 @@ export function usePlayers() {
         };
     };
 
+    const getPlayerById = async (sessionId: string, playerId: string) => {
+        const player = await getDoc(doc(db, "sessions", sessionId, "players", playerId));
+
+        return player.data();
+    }
+
     return {
         addPlayer,
         addPlayerAnswer,
@@ -181,5 +187,6 @@ export function usePlayers() {
         changePlayerStatus,
         usePlayersBySession,
         usePlayerById,
+        getPlayerById,
     };
 }

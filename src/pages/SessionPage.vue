@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { watch, ref } from 'vue';
+import { watch, ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 import { useAuth } from '../composables/useAuth';
@@ -15,9 +15,9 @@ const route = useRoute();
 const router = useRouter();
 const sessionCode = route.params.id;
 
-const { user, loginAnonymously } = useAuth();
+const { user, loginAnonymously, getUserDoc } = useAuth();
 const { useSessionByCode, changeSessionStatus } = useSession();
-const { addPlayer, usePlayersBySession, addPlayerAnswer, addPlayerScore, changePlayerStatus, usePlayerById } = usePlayers();
+const { addPlayer, usePlayersBySession, addPlayerAnswer, addPlayerScore, changePlayerStatus, usePlayerById, getPlayerById } = usePlayers();
 const { readQuiz } = useQuiz();
 
 const { session, loading } = useSessionByCode(sessionCode as string);
@@ -28,16 +28,38 @@ const { players } = usePlayersBySession(sessionCode as string);
 const player = ref<Player | null>(null);
 
 const answers = ref<Record<string, Answer>>({});
+const correctAnswer = ref<string>("");
 const currentStake = ref<number>(1);
-const score = ref<number>(0);
+const score = ref<number>(10000);
 const questionOrder = ref<number>(0);
 const hasFinishedQuestion = ref<boolean>(false);
 const hasFinishedQuiz = ref<boolean>(false);
 
-watch(user, () => {
+quiz = null;
+onMounted(async () => {
     if (!user.value) return;
-    player.value = usePlayerById(sessionCode as string, user.value?.uid).player.value;
+
+    const user_data = await getUserDoc(user.value.uid);
+    const player_data = await getPlayerById(sessionCode as string, user.value.uid);
+    if (user_data) {
+        if (!player_data) {
+            console.log("player is getting added")
+            await addPlayer(sessionCode as string, user_data.username);
+        }
+        player.value = usePlayerById(sessionCode as string, user.value?.uid).player.value;
+    }
+    else {
+        player.value = usePlayerById(sessionCode as string, user.value?.uid).player.value;
+    }
 });
+
+watch(player, async () => {
+    if (!user.value) return;
+    const player_data = await getPlayerById(sessionCode as string, user.value.uid);
+    if (!player_data) return;
+
+    score.value = player_data.score;
+})
 
 watch(loading, () => {
     if (loading.value) return;
@@ -76,13 +98,17 @@ const handleAnswerQuestion = (payload: { questionId: string; choice: string; rem
     answers.value[questionId] = { selected: choice, answeredAt: Date.now() };
     addPlayerAnswer(sessionCode as string, user.value.uid, answers.value);
 
-    const points = Math.round(1000 * remainingRatio * currentStake.value);
-    if (validateAnswer(questionId, choice) || choice !== '') score.value += points;
+    const points = Math.floor(1000 * remainingRatio * currentStake.value);
+
+    if (validateAnswer(questionId, choice) && choice !== '') score.value += points;
     else score.value -= points;
 
     addPlayerScore(sessionCode as string, user.value.uid, score.value);
-    questionOrder.value++;
-    hasFinishedQuestion.value = true;
+    setTimeout(() => {
+        questionOrder.value++;
+        hasFinishedQuestion.value = true;
+        correctAnswer.value = "";
+    }, 2000);
 };
 
 const handleStartQuestion = (payload: { questionId: string }) => {
@@ -96,10 +122,13 @@ const handleLeaderboardAdvance = () => {
     hasFinishedQuestion.value = false;
 };
 
-const validateAnswer = (questionId: string, choice: string): boolean => {
+const validateAnswer = (questionId: string, choice: string) => {
     const targetQuestion = quiz?.questions.find((q) => q.id === questionId);
-    if (!targetQuestion?.correctChoice) return false;
-    return decodeChoice(targetQuestion.correctChoice) === choice;
+    if (!targetQuestion?.correctChoice) return;
+    const decodedCorrect = decodeChoice(targetQuestion.correctChoice);
+    correctAnswer.value = decodedCorrect;
+
+    return decodedCorrect === choice;
 };
 
 watch(questionOrder, () => {
@@ -123,30 +152,15 @@ watch(questionOrder, () => {
 
         <!-- Logged in -->
         <template v-if="user != null">
-            <WaitingRoom
-                v-if="session.status === 'waiting'"
-                :sessionCode="sessionCode as string"
-                :players="players"
-                :isHost="user.uid === session.hostUid"
-                @start="handleStartSession"
-            />
+            <WaitingRoom v-if="session.status === 'waiting'" :sessionCode="sessionCode as string" :players="players"
+                :isHost="user.uid === session.hostUid" @start="handleStartSession" />
 
-            <ActiveRoom
-                v-else-if="session.status === 'active'"
-                :isHost="user.uid === session.hostUid"
-                :has-player-finished="player?.finished"
-                :questions="questions"
-                :answers="answers"
-                :questionOrder="questionOrder"
-                :players="players"
-                :has-finished-question="hasFinishedQuestion"
-                :has-finished-quiz="hasFinishedQuiz"
-                :current-stake="currentStake"
+            <ActiveRoom v-else-if="session.status === 'active'" :isHost="user.uid === session.hostUid"
+                :has-player-finished="player?.finished" :questions="questions" :answers="answers"
+                :questionOrder="questionOrder" :players="players" :has-finished-question="hasFinishedQuestion"
+                :has-finished-quiz="hasFinishedQuiz" :current-stake="currentStake" :correct-answer="correctAnswer"
                 @start="handleStartQuestion"
-                @answer="handleAnswerQuestion"
-                @advance="handleLeaderboardAdvance"
-                @set-stake="handleSetStake"
-            />
+                @answer="handleAnswerQuestion" @advance="handleLeaderboardAdvance" @set-stake="handleSetStake" />
         </template>
 
         <!-- Guest join form -->
@@ -158,15 +172,8 @@ watch(questionOrder, () => {
 
                 <div class="field">
                     <label class="field-label" for="username">Your nickname</label>
-                    <input
-                        id="username"
-                        class="text-input"
-                        type="text"
-                        name="username"
-                        v-model="tempUserName"
-                        placeholder="e.g. QuizWizard99"
-                        @keyup.enter="handleCreateTempUser"
-                    />
+                    <input id="username" class="text-input" type="text" name="username" v-model="tempUserName"
+                        placeholder="e.g. QuizWizard99" @keyup.enter="handleCreateTempUser" />
                 </div>
 
                 <button class="btn-primary" :disabled="!tempUserName.trim()" @click="handleCreateTempUser">
@@ -211,15 +218,20 @@ watch(questionOrder, () => {
     margin-bottom: 1rem;
 }
 
-@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
 
-.state-screen > p {
+.state-screen>p {
     font-family: 'Manrope', sans-serif;
     font-size: 0.9rem;
     color: var(--muted, #6B6760);
 }
 
-.join-card, .error-card {
+.join-card,
+.error-card {
     background: #fff;
     border: 1.5px solid var(--border, #EDEBE5);
     border-radius: 16px;
@@ -233,13 +245,24 @@ watch(questionOrder, () => {
 }
 
 @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(14px); }
-    to   { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(14px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
-.join-icon, .error-icon { font-size: 2rem; }
+.join-icon,
+.error-icon {
+    font-size: 2rem;
+}
 
-.join-card h2, .error-card h2 {
+.join-card h2,
+.error-card h2 {
     font-family: 'Syne', sans-serif;
     font-size: 1.5rem;
     font-weight: 800;
@@ -247,7 +270,8 @@ watch(questionOrder, () => {
     color: var(--text, #1A1814);
 }
 
-.join-card p, .error-card p {
+.join-card p,
+.error-card p {
     font-family: 'Manrope', sans-serif;
     font-size: 0.9rem;
     color: var(--muted, #6B6760);
@@ -287,8 +311,15 @@ watch(questionOrder, () => {
     transition: border-color 0.15s, background 0.15s;
 }
 
-.text-input::placeholder { color: var(--muted, #6B6760); opacity: 0.6; }
-.text-input:focus { border-color: var(--accent, #E8471A); background: #fff; }
+.text-input::placeholder {
+    color: var(--muted, #6B6760);
+    opacity: 0.6;
+}
+
+.text-input:focus {
+    border-color: var(--accent, #E8471A);
+    background: #fff;
+}
 
 .btn-primary {
     display: inline-flex;
@@ -307,6 +338,13 @@ watch(questionOrder, () => {
     transition: background 0.15s, transform 0.1s;
 }
 
-.btn-primary:hover:not(:disabled) { background: var(--accent-dk, #CF3A12); transform: translateY(-1px); }
-.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-primary:hover:not(:disabled) {
+    background: var(--accent-dk, #CF3A12);
+    transform: translateY(-1px);
+}
+
+.btn-primary:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
 </style>

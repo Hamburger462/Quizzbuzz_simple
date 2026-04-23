@@ -86,7 +86,7 @@ const handlePlay = (quizId?: string) => {
                     v-for="(quiz, i) in filtered"
                     :key="quiz.id"
                     class="quiz-card"
-                    :style="{ animationDelay: i * 35 + 'ms' }"
+                    :style="{ animationDelay: i * 35 + 'ms', backgroundImage: `url(${quiz.cover_image_url})`, }"
                 >
                     <div class="quiz-card-inner">
                         <div class="quiz-top">
@@ -351,6 +351,7 @@ h1 {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+    backdrop-filter: blur(20px);
 }
 
 .quiz-top {
@@ -388,7 +389,7 @@ h1 {
 
 .quiz-title {
     font-family: 'Syne', sans-serif;
-    font-size: 1rem;
+    font-size: 1.5rem;
     font-weight: 700;
     color: var(--text, #1A1814);
     letter-spacing: -0.01em;

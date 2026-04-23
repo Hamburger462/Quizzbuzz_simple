@@ -17,7 +17,7 @@
                         Real-time scoring, timed questions, instant leaderboards.
                     </p>
                     <div class="hero-actions">
-                        <RouterLink to="/auth/register" class="btn btn-primary">Host a game</RouterLink>
+                        <RouterLink to="/auth/register" class="btn btn-primary">Register</RouterLink>
                         <RouterLink to="/session" class="btn btn-ghost">Join with code</RouterLink>
                     </div>
                     <p class="hero-stat"><strong>12,400+</strong> games played this week</p>

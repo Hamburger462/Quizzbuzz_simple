@@ -10,8 +10,10 @@ defineProps<{
         text: string;
         choices: string[];
         timeLimit: number;
+        image_url?: string;
     }[] | null;
     answers: Record<string, { startedAt?: number }>;
+    correctAnswer: string;
     questionOrder: number;
     players: { nickname: string; score: number }[];
     hasFinishedQuestion: boolean;
@@ -55,6 +57,7 @@ const handleSetStake = (value: number) => emit('setStake', value);
                     :active="questionOrder === qIndex"
                     :started-at="answers[question.id] ? answers[question.id].startedAt : null"
                     :current-stake="currentStake"
+                    :correct-answer="correctAnswer"
                     @start="handleStart"
                     @select="handleSelect"
                     @set-stake="handleSetStake"

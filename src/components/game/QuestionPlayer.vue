@@ -9,7 +9,9 @@ const props = defineProps<{
         text: string;
         timeLimit: number;
         choices: string[];
+        image_url?: string;
     };
+    correctAnswer: string;
     startedAt?: number | null;
     index: number;
     active: boolean;
@@ -71,8 +73,11 @@ const getRoundedRatio = () => {
     return Math.round(raw * 10000) / 10000;
 };
 
+const hasSelected = ref<boolean>(false);
+
 const handleSelect = (choice: string) => {
     emit('select', { questionId: props.question.id, choice, remainingRatio: getRoundedRatio() });
+    hasSelected.value = true;
     stopTimer();
 };
 
@@ -102,6 +107,7 @@ const timerColor = computed(() => {
         <!-- ② Question — revealed only after stake is locked in -->
         <div v-else class="question-wrap">
             <div class="question-card">
+                <img v-if="question.image_url" :src="`${question.image_url}`">
 
                 <div class="timer-track">
                     <div
@@ -125,6 +131,7 @@ const timerColor = computed(() => {
                         v-for="(choice, cIndex) in question.choices"
                         :key="cIndex"
                         class="choice-label"
+                        :class="hasSelected && (choice == correctAnswer ? 'choice-correct' : 'choice-wrong')"
                     >
                         <input
                             type="radio"
@@ -271,6 +278,16 @@ const timerColor = computed(() => {
 .choice-label:has(.choice-radio:checked) {
     border-color: var(--accent, #E8471A);
     background: #FDF0EC;
+}
+
+.choice-correct{
+    border-color: hsla(118, 82%, 51%);
+    background: hsla(118, 82%, 51%, 0.5);
+}
+
+.choice-wrong{
+    border-color: var(--accent, #E8471A);
+    background: hsl(13, 82%, 51%, 0.5);
 }
 
 .choice-marker {

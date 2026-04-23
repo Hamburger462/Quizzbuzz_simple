@@ -5,10 +5,10 @@ const supabase = createClient(
   import.meta.env.VITE_SUPABASE_ANON_KEY
 );
 
-export async function uploadQuizImage(file) {
+export async function uploadImage(file: File) {
   const fileName = `${Date.now()}-${file.name}`
 
-  const { data, error } = await supabase.storage
+  const { error } = await supabase.storage
     .from("quiz-images")
     .upload(fileName, file)
 

@@ -7,7 +7,7 @@ import {
   signOut,
   type User as FirebaseUser
 } from "firebase/auth"
-import { doc, setDoc, onSnapshot } from "firebase/firestore"
+import { doc, setDoc, getDoc, onSnapshot } from "firebase/firestore"
 import { auth, db } from "../firebase"
 import type { User } from "../types"
 
@@ -76,6 +76,11 @@ export function useAuth() {
     return { userDoc, docLoading, unsubscribe }
   }
 
+  const getUserDoc = async (uid: string) => {
+    const userData = await getDoc(doc(db, "users", uid));
+    return userData.data();
+  }
+
   const updateUserDoc = async (uid: string, data: Partial<User>) => {
     await setDoc(doc(db, "users", uid), data, { merge: true })
   }
@@ -88,6 +93,7 @@ export function useAuth() {
     loginAnonymously,
     logout,
     useUserDoc,
+    getUserDoc,
     updateUserDoc,
   }
 }
