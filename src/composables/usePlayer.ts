@@ -59,7 +59,7 @@ export function usePlayers() {
             doc(db, "sessions", sessionCode, "players", user.value.uid),
             {
                 nickname: nickname,
-                score: 10000,
+                score: 0,
                 finished: false,
                 joinedAt: Date.now(),
             },
