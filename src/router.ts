@@ -7,7 +7,7 @@ const routes = [
 
   { path: "/game/:id", component: () => import("./pages/GamePage.vue") },
 
-  { path: "/session", component: () => import("./pages/JoinPage.vue")},
+  { path: "/session", component: () => import("./pages/JoinPage.vue") },
   { path: "/session/:id", component: () => import("./pages/SessionPage.vue") },
 
   { path: "/auth/:choice", component: () => import("./pages/AuthPage.vue") },
@@ -15,9 +15,11 @@ const routes = [
   { path: "/archive", component: () => import("./pages/ArchivePage.vue") },
 
   { path: "/profile/:id", component: () => import("./pages/ProfilePage.vue") },
+
+  { path: "/:pathMatch(.*)*", component: () => import("./pages/NotFoundPage.vue") },
 ];
 
 export const router = createRouter({
     history: createWebHistory(),
-    routes
-})
+    routes,
+});
