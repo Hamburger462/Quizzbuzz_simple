@@ -9,7 +9,7 @@ const { user } = useAuth();
     <header class="site-header">
         <div class="header-inner">
             <RouterLink to="/" class="logo">
-                <span class="logo-dot"></span>
+                <!-- <span class="logo-dot"></span> -->
                 <span class="logo-text">Quizzbuzz</span>
             </RouterLink>
 
@@ -70,7 +70,7 @@ const { user } = useAuth();
 .logo-text {
     font-family: 'Syne', sans-serif;
     font-weight: 800;
-    font-size: 1.25rem;
+    font-size: 1.75rem;
     color: #1A1814;
     letter-spacing: -0.02em;
 }
